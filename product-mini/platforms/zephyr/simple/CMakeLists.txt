@@ -10,51 +10,58 @@ enable_language (ASM)
 
 set (WAMR_BUILD_PLATFORM "zephyr")
 
-# Build as X86_32 by default, change to "AARCH64[sub]", "ARM[sub]", "THUMB[sub]", "MIPS" or "XTENSA"
-# if we want to support arm, thumb, mips or xtensa
+# Default Build Target
 if (NOT DEFINED WAMR_BUILD_TARGET)
   set (WAMR_BUILD_TARGET "X86_32")
 endif ()
 
-if (NOT DEFINED WAMR_BUILD_INTERP)
-  # Enable Interpreter by default
+# Configure for ESP32-S3
+if (BOARD STREQUAL "esp32s3_devkitc" OR BOARD STREQUAL "esp32s3_devkitc_1")
+  set (WAMR_BUILD_TARGET "XTENSA")
+  set (WAMR_BUILD_AOT 0)
   set (WAMR_BUILD_INTERP 1)
+  set (WAMR_BUILD_GLOBAL_HEAP_SIZE 65536)
+endif ()
+
+if (NOT DEFINED WAMR_BUILD_INTERP)
+  set (WAMR_BUILD_INTERP 1) 
 endif ()
 
 if (NOT DEFINED WAMR_BUILD_AOT)
-  # Enable AOT by default.
   set (WAMR_BUILD_AOT 1)
 endif ()
 
 if (NOT DEFINED WAMR_BUILD_LIBC_BUILTIN)
-  # Enable libc builtin support by default
   set (WAMR_BUILD_LIBC_BUILTIN 1)
 endif ()
 
 if (NOT DEFINED WAMR_BUILD_LIBC_WASI)
-  # Disable libc wasi support by default
   set (WAMR_BUILD_LIBC_WASI 0)
 endif ()
 
-if (WAMR_BUILD_TARGET STREQUAL "RISCV64_LP64" OR WAMR_BUILD_TARGET STREQUAL "RISCV32_ILP32")
-  set (WAMR_BUILD_FAST_INTERP 1)
-endif ()
-
-# Override the global heap usage
 if (NOT DEFINED WAMR_BUILD_GLOBAL_HEAP_POOL)
   set (WAMR_BUILD_GLOBAL_HEAP_POOL 1)
 endif ()
 
-# Override the global heap size for small devices
 if (NOT DEFINED WAMR_BUILD_GLOBAL_HEAP_SIZE)
-  set (WAMR_BUILD_GLOBAL_HEAP_SIZE 131072) # 128 KB
+  set (WAMR_BUILD_GLOBAL_HEAP_SIZE 131072)
 endif ()
 
 set (WAMR_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
 
 include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
 
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD})
+  zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD})
+endif ()
+
+# Conditionally add architecture-specific files
+if (WAMR_BUILD_TARGET STREQUAL "X86_32")
+  target_sources(app PRIVATE
+                 ${WAMR_ROOT_DIR}/core/iwasm/common/arch/invokeNative_ia32.s)
+endif ()
+
+# Add the main source files
 target_sources(app PRIVATE
                ${WAMR_RUNTIME_LIB_SOURCE}
                src/main.c)
-

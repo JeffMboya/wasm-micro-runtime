@@ -4,26 +4,13 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 
-int
-main(int argc, char **argv)
-{
-    char *buf;
+int main() {
+    int a = 10;
+    int b = 12;
+    int sum = a + b;
 
-    printf("Hello world!\n");
+    printf("The sum of %d and %d is: %d\n", a, b, sum);
 
-    buf = malloc(16);
-    if (!buf) {
-        printf("malloc buf failed\n");
-        return -1;
-    }
-
-    printf("buf ptr: %p\n", buf);
-
-    snprintf(buf, 1024, "%s", "1234\n");
-    printf("buf: %s", buf);
-
-    free(buf);
-    return 0;
+    return sum;
 }
